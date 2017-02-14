@@ -8,6 +8,20 @@
 
 import Foundation
 
+struct Resolvable<T> {
+    let value: T?
+    let symbol: String?
+    
+    func resolve(table: SymbolTable?) -> T? { // TODO: throws unresolvable error
+        if let value = value {
+            return value
+        }
+        
+        // TODO: resolve symbol
+        return nil
+    }
+}
+
 struct SymbolTable {
     
 }

@@ -10,6 +10,8 @@
 		41B75F471E529CCA00FEF38A /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B75F461E529CCA00FEF38A /* main.swift */; };
 		41B75F521E529D4B00FEF38A /* Assembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B75F511E529D4B00FEF38A /* Assembler.swift */; };
 		41B75F541E529E6B00FEF38A /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B75F531E529E6B00FEF38A /* Parser.swift */; };
+		41B75F561E53655300FEF38A /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B75F551E53655300FEF38A /* Helpers.swift */; };
+		41B75F581E53681C00FEF38A /* Emitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B75F571E53681C00FEF38A /* Emitter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +33,8 @@
 		41B75F4F1E529D0F00FEF38A /* test.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = test.asm; sourceTree = "<group>"; };
 		41B75F511E529D4B00FEF38A /* Assembler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Assembler.swift; sourceTree = "<group>"; };
 		41B75F531E529E6B00FEF38A /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		41B75F551E53655300FEF38A /* Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Helpers.swift; path = ../Helpers.swift; sourceTree = "<group>"; };
+		41B75F571E53681C00FEF38A /* Emitter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Emitter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +71,8 @@
 				41B75F461E529CCA00FEF38A /* main.swift */,
 				41B75F511E529D4B00FEF38A /* Assembler.swift */,
 				41B75F531E529E6B00FEF38A /* Parser.swift */,
+				41B75F571E53681C00FEF38A /* Emitter.swift */,
+				41B75F551E53655300FEF38A /* Helpers.swift */,
 			);
 			path = lc3assembler;
 			sourceTree = "<group>";
@@ -142,6 +148,8 @@
 				41B75F541E529E6B00FEF38A /* Parser.swift in Sources */,
 				41B75F471E529CCA00FEF38A /* main.swift in Sources */,
 				41B75F521E529D4B00FEF38A /* Assembler.swift in Sources */,
+				41B75F581E53681C00FEF38A /* Emitter.swift in Sources */,
+				41B75F561E53655300FEF38A /* Helpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
