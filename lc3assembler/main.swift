@@ -9,9 +9,12 @@
 import Foundation
 
 let test = ".ORIG x3000\n" +
-           "ADD R0, R1, R2\n" +
+           "START ADD R0, R1, R2\n" +
            "LD R5, VARIABLE\n" +
-           "VARIABLE .FILL #9"
+           "VARIABLE .FILL #9\n" +
+           "STI R7, START\n" +
+           "BRnz START\n" +
+           ".END"
 
 func parseTest(test: String) {
     let assembly = assemble(assemblyFile: test)

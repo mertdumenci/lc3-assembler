@@ -75,7 +75,7 @@ func deconsBR(opcode: String) -> (opcode: String, conditionCode: ConditionCode)?
         return nil
     }
     
-    let thirdIndex = opcode.index(opcode.startIndex, offsetBy: 3)
+    let thirdIndex = opcode.index(opcode.startIndex, offsetBy: 2)
     firstTwo = opcode.substring(to: thirdIndex)
     
     if firstTwo != "BR" {
@@ -162,7 +162,7 @@ enum Instruction {
     case TRAP(trapVector: UInt8)
     
     static let opcodes =
-        ["ADD", "AND", "BR", "JMP", "JSR", "JSRR", "LD", "LDI", "LDR", "LEA", "NOT",
+        ["ADD", "AND", "BR", "BRn", "BRnz", "BRnp", "BRnzp", "BRz", "BRzp", "BRp", "JMP", "JSR", "JSRR", "LD", "LDI", "LDR", "LEA", "NOT",
          "RET", "RTI", "ST", "STI", "STR", "TRAP"]
 }
 
