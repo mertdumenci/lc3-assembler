@@ -8,29 +8,33 @@
 
 import Foundation
 
-typealias SymbolTable<T> = Dictionary<String, T>
+typealias SymbolTable = Dictionary<String, UInt16>
 
-struct Resolvable<T> {
-    var value: T?
+struct ResolvableOffset {
+    var value: Int16?
     let symbol: String?
     
-    func resolving(table: SymbolTable<T>?) -> Resolvable<T>? { // TODO: throws unresolvable error
+    func resolving(table: SymbolTable?, currentAddress: UInt16)
+                    -> ResolvableOffset? {
         if let value = value {
-            return Resolvable(value: value, symbol: nil)
+            return ResolvableOffset(value: value, symbol: nil)
         }
     
-        if let table = table, let symbol = symbol {
-            return Resolvable(value: table[symbol], symbol: nil)
+        if let table = table,
+           let symbol = symbol,
+           let symbolAddress = table[symbol] {
+            let offset = Int16(symbolAddress) - Int16(currentAddress + 1)
+            return ResolvableOffset(value: offset, symbol: nil)
         }
         
         return nil
     }
 }
 
-extension Resolvable: CustomStringConvertible {
+extension ResolvableOffset: CustomStringConvertible {
     var description: String {
-        if let value = value as? UInt16 { // TODO: This is antithetical to the generic Resolvable class, fix
-            return printHex(value)
+        if let value = value {
+            return String(value)
         } else if let symbol = symbol {
             return symbol
         }
@@ -40,12 +44,12 @@ extension Resolvable: CustomStringConvertible {
 }
 
 
-func generate(assemblyFile: String) -> ([Assembly<BinaryRepresentable>], SymbolTable<UInt16>)? {
+func generate(assemblyFile: String) -> ([Assembly<BinaryRepresentable>], SymbolTable)? {
     guard let assembly = parse(assembly: assemblyFile) else {
         return nil
     }
     
-    var table: SymbolTable<UInt16> = SymbolTable<UInt16>()
+    var table: SymbolTable = SymbolTable()
     for line in assembly {
         if let label = line.label {
             table[label] = line.address
@@ -56,7 +60,7 @@ func generate(assemblyFile: String) -> ([Assembly<BinaryRepresentable>], SymbolT
 }
 
 func resolveSymbols(assembly: [Assembly<BinaryRepresentable>],
-                    table: SymbolTable<UInt16>) -> [Assembly<BinaryRepresentable>] {
+                    table: SymbolTable) -> [Assembly<BinaryRepresentable>] {
     var resolvedAssembly = Array<Assembly<BinaryRepresentable>>()
     
     for line in assembly {
@@ -65,34 +69,44 @@ func resolveSymbols(assembly: [Assembly<BinaryRepresentable>],
             
             switch instruction {
             case .BR(let conditionCode, let offset):
-                if let resolved = offset.resolving(table: table) {// TODO: This is antithetical to the generic Resolvable class, fix
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .BR(conditionCode: conditionCode,
                                               offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .JSR(let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .JSR(offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .LD(let dataRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .LD(dataRegister: dataRegister,
                                               offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .LDI(let dataRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .LDI(dataRegister: dataRegister,
                                                offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .LDR(let dataRegister, let baseRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .LDR(dataRegister: dataRegister,
                                               baseRegister: baseRegister,
                                               offset: resolved)
@@ -100,28 +114,36 @@ func resolveSymbols(assembly: [Assembly<BinaryRepresentable>],
                     fatalError("Can't resolve symbol")
                 }
             case .LEA(let dataRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .LEA(dataRegister: dataRegister,
                                                offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .ST(let sourceRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .ST(sourceRegister: sourceRegister,
                                               offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .STI(let sourceRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .STI(sourceRegister: sourceRegister,
                                               offset: resolved)
                 } else {
                     fatalError("Can't resolve symbol")
                 }
             case .STR(let sourceRegister, let baseRegister, let offset):
-                if let resolved = offset.resolving(table: table) {
+                if let resolved =
+                    offset.resolving(table: table,
+                                     currentAddress: line.address) {
                     resolvedInstruction = .STR(sourceRegister: sourceRegister,
                                                baseRegister: baseRegister,
                                                offset: resolved)
