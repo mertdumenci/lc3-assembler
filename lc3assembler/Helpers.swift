@@ -19,3 +19,7 @@ func tokenize(line: String) -> [String] {
 func strip(_ string: String, of: String) -> String {
     return string.replacingOccurrences(of: of, with: "")
 }
+
+func printHex(_ integer: UInt16) -> String {
+    return "0x" + String(integer, radix: 16)
+}

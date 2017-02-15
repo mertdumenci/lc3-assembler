@@ -20,7 +20,7 @@ func parseHex(string: String) -> UInt16? {
 }
 
 func parseInt(string: String) -> Int16? {
-    guard let first = string.characters.first, first == "x" else {
+    guard let first = string.characters.first, first == "#" else {
         return nil
     }
     
@@ -38,9 +38,9 @@ func parseNumber(string: String) -> Int16? {
     }
 }
 
-func parseResolvable(string: String) -> Resolvable<Int16> {
+func parseResolvable(string: String) -> Resolvable<UInt16> {
     if let value = parseNumber(string: string) {
-        return Resolvable(value: value, symbol: nil)
+        return Resolvable(value: UInt16(value), symbol: nil)
     }
     
     let strippedString = strip(string, of: ",")
@@ -111,6 +111,19 @@ struct ConditionCode: OptionSet {
 struct Assembly<T> {
     let assembly: T
     let label: String?
+    let address: UInt16
+}
+
+extension Assembly where T: BinaryRepresentable {
+    func binaryRepresentation() -> NSData {
+        return NSData()
+    }
+}
+
+extension Assembly: CustomStringConvertible {
+    var description: String {
+        return "Assembly (\(printHex(address)), \(label)): \(assembly)"
+    }
 }
 
 typealias LabeledLine = (label: String?, line: String)
@@ -132,20 +145,20 @@ enum Instruction {
     case ADD_IMMEDIATE(dataRegister: UInt8, sourceRegister: UInt8, immediateValue: Int8)
     case AND(dataRegister: UInt8, sourceRegister1: UInt8, sourceRegister2: UInt8)
     case AND_IMMEDIATE(dataRegister: UInt8, sourceRegister: UInt8, immediateValue: Int8)
-    case BR(conditionCode: ConditionCode, offset: Resolvable<Int16>)
+    case BR(conditionCode: ConditionCode, offset: Resolvable<UInt16>)
     case JMP(baseRegister: UInt8)
-    case JSR(offset: Resolvable<Int16>)
+    case JSR(offset: Resolvable<UInt16>)
     case JSRR(baseRegister: UInt8)
-    case LD(dataRegister: UInt8, offset: Resolvable<Int16>)
-    case LDI(dataRegister: UInt8, offset: Resolvable<Int16>)
-    case LDR(dataRegister: UInt8, baseRegister: UInt8, offset: Resolvable<Int16>)
-    case LEA(dataRegister: UInt8, offset: Resolvable<Int16>)
+    case LD(dataRegister: UInt8, offset: Resolvable<UInt16>)
+    case LDI(dataRegister: UInt8, offset: Resolvable<UInt16>)
+    case LDR(dataRegister: UInt8, baseRegister: UInt8, offset: Resolvable<UInt16>)
+    case LEA(dataRegister: UInt8, offset: Resolvable<UInt16>)
     case NOT(dataRegister: UInt8, sourceRegister: UInt8)
     case RET
     case RTI
-    case ST(sourceRegister: UInt8, offset: Resolvable<Int16>)
-    case STI(sourceRegister: UInt8, offset: Resolvable<Int16>)
-    case STR(sourceRegister: UInt8, baseRegister: UInt8, offset: Resolvable<Int16>)
+    case ST(sourceRegister: UInt8, offset: Resolvable<UInt16>)
+    case STI(sourceRegister: UInt8, offset: Resolvable<UInt16>)
+    case STR(sourceRegister: UInt8, baseRegister: UInt8, offset: Resolvable<UInt16>)
     case TRAP(trapVector: UInt8)
     
     static let opcodes =
@@ -154,11 +167,11 @@ enum Instruction {
 }
 
 protocol Parseable {
-    static func parse(line: LabeledLine) -> Assembly<BinaryRepresentable>?
+    static func parse(line: LabeledLine, address: UInt16) -> Assembly<BinaryRepresentable>? // TODO: Don't use Assembly<T> here, extract that part to a separate function
 }
 
 extension AssemblerDirective: Parseable {
-    static func parse(line: LabeledLine) -> Assembly<BinaryRepresentable>? {
+    static func parse(line: LabeledLine, address: UInt16) -> Assembly<BinaryRepresentable>? {
         let tokens = tokenize(line: line.line)
         
         guard let opcode = tokens.first, AssemblerDirective.opcodes.contains(opcode) else {
@@ -197,7 +210,7 @@ extension AssemblerDirective: Parseable {
         }
         
         if let directive = directive {
-            return Assembly(assembly: directive, label: line.label)
+            return Assembly(assembly: directive, label: line.label, address: address)
         }
         
         return nil
@@ -205,7 +218,7 @@ extension AssemblerDirective: Parseable {
 }
 
 extension Instruction: Parseable {
-    static func parse(line: LabeledLine) -> Assembly<BinaryRepresentable>? {
+    static func parse(line: LabeledLine, address: UInt16) -> Assembly<BinaryRepresentable>? {
         let tokens = tokenize(line: line.line)
         
         guard let opcode = tokens.first, Instruction.opcodes.contains(opcode) else {
@@ -350,7 +363,7 @@ extension Instruction: Parseable {
         }
         
         if let instruction = instruction {
-            return Assembly(assembly: instruction, label: line.label)
+            return Assembly(assembly: instruction, label: line.label, address: address)
         }
         
         return nil
@@ -376,30 +389,37 @@ func stripLabel(_ line: String) -> LabeledLine {
 }
 
 func parse(assembly: String) -> [Assembly<BinaryRepresentable>]? {
-    let lines = assembly.characters.split(separator: "\n")
+    let lines = assembly.characters.split(separator: "\n").map { String($0) }
     
-    let assembly = lines.map() { (lineSequence) -> Assembly<BinaryRepresentable>? in
-        let line = String(lineSequence)
-        
-        let instruction = Instruction.parse(line: stripLabel(line))
-        let directive = AssemblerDirective.parse(line: stripLabel(line))
-        
-        if let instruction = instruction {
-            return instruction
-        } else if let directive = directive {
-            return directive
-        } else {
-            fatalError("Can't parse line: " + line)
+    var assembly: [Assembly<BinaryRepresentable>] = []
+    var initialAddress: UInt16? = nil
+    var counter: UInt16 = 0
+    
+    for line in lines {
+        if let directive = AssemblerDirective.parse(line: stripLabel(line), address: 0x0),
+            case .ORIG(let address) = (directive.assembly as! AssemblerDirective)  { // TODO: Find a way that doesn't need a force cast
+            initialAddress = address
         }
-        
-        return nil
     }
     
-    let successfulAssembly = assembly.flatMap({ $0 })
-    
-    if successfulAssembly.count != assembly.count {
-        return nil
+    if let initialAddress = initialAddress {
+        for line in lines {
+            let address = initialAddress + counter
+            
+            let instruction = Instruction.parse(line: stripLabel(line), address: address)
+            let directive = AssemblerDirective.parse(line: stripLabel(line), address: address)
+            
+            if let instruction = instruction {
+                assembly.append(instruction)
+            } else if let directive = directive {
+                assembly.append(directive)
+            } else {
+                fatalError("Can't parse line: " + line)
+            }
+            
+            counter += 1
+        }
     }
     
-    return successfulAssembly
+    return (assembly.count == 0 ? nil : assembly)
 }
